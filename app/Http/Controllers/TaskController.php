@@ -8,11 +8,13 @@ use Inertia\Inertia;
 
 class TaskController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $tasks = Task::all();
-        return Inertia::render('Tasks/Index',compact('tasks'));
+        return Inertia::render('Tasks/Index', compact('tasks'));
     }
-    public function store(Request $request){
+    public function store(Request $request)
+    {
         // Logic to store a new task
         $request->validate([
             'title' => 'required|string|max:255',
@@ -24,7 +26,8 @@ class TaskController extends Controller
         Task::create($request->all());
         return redirect()->route('tasks.index')->with('message', 'Task created successfully.');
     }
-    public function update(Request $request, Task $task){
+    public function update(Request $request, Task $task)
+    {
         // Logic to update an existing task
         $request->validate([
             'title' => 'required|string|max:255',
@@ -36,7 +39,22 @@ class TaskController extends Controller
         $task->update($request->all());
         return redirect()->route('tasks.index')->with('message', 'Task updated successfully.');
     }
-    public function destroy(Task $task){
+    public function badgeStatusUpdate(Task $task)
+    {
+        $nextStatus = match ($task->status) {
+            'pending' => 'in_progress',
+            'in_progress' => 'completed',
+            'completed' => 'pending',
+            default => 'pending',
+        };
+
+        $task->update([
+            'status' => $nextStatus,
+        ]);
+        return redirect()->route('tasks.index')->with('message', 'Task status updated successfully.');
+    }
+    public function destroy(Task $task)
+    {
         $task->delete();
         return redirect()->route('tasks.index')->with('message', 'Task deleted successfully.');
     }

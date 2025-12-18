@@ -66,7 +66,7 @@ interface IndexProps {
 export default function Index() {
     const [openAdd, setOpenAdd] = useState(false)
     const { flash, tasks } = usePage().props as IndexProps;
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData , post, processing, errors } = useForm({
         title: '',
         category: '',
         description: '',

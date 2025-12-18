@@ -32,6 +32,7 @@ import { Button } from './button';
 import { DialogFooter, DialogHeader } from './dialog';
 import { Input } from './input';
 import { Textarea } from './textarea';
+import { router } from '@inertiajs/react';
 interface Props {
     tasks: Tasks[];
 }
@@ -64,13 +65,20 @@ export default function ListCardTasks({ tasks }: Props) {
             });
         }
     };
+
+    const handleBadgeStatus = (id:number) => {
+        router.put(`/tasks/${id}/badge-status`, {} ,{
+            preserveScroll: true,
+        })
+
+    }
     return (
         <>
             {tasks.map((task) => (
-                <div className="flex w-full flex-col gap-2 rounded-lg border p-4 shadow-sm">
+                <div className="flex w-full flex-col gap-2 rounded-lg border p-4 shadow-sm hover:shadow-md ">
                     <div className="flex flex-row justify-between p-2">
                         <div className="flex flex-row items-start gap-3">
-                            <div className="text-green-500">
+                            <div className="text-green-500  cursor-pointer"  onClick={() => handleBadgeStatus(task.id)}>
                                 {/* Icon */}
                                 {/* <LoaderCircleIcon/> */}
                                 {/* <Clock10Icon/> */}
@@ -85,10 +93,10 @@ export default function ListCardTasks({ tasks }: Props) {
                         </div>
                         <div className="flex flex-row gap-2">
                             {/* Badges */}
-                            <Badge variant="destructive" className="h-fit">
+                            <Badge variant={`${task.priority === 'low' ? 'greenday' : task.priority === 'medium' ? 'yellowclow' : task.priority === 'high' ? 'destructive' : 'greenday'}`} className="h-fit">
                                 {task.priority}
                             </Badge>
-                            <Badge variant={'greenday'} className="h-fit">
+                            <Badge variant={`${task.status === 'completed ' ? 'greenday' : task.status === 'in_progress' ? 'yellowclow' : task.status === 'pending' ? 'destructive' : 'greenday'}`} className="h-fit">
                                 {task.status}
                             </Badge>
                             <Badge variant="outline" className="h-fit">

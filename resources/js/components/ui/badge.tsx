@@ -16,7 +16,9 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         greenday:
-          "border-transparent bg-green-600 text-white [a&]:hover:bg-green/90 focus-visible:ring-greem/20 dark:focus-visible:ring-green/40 dark:bg-green/60",
+          "border-transparent bg-green-600 text-white [a&]:hover:bg-green/90 focus-visible:ring-green/20 dark:focus-visible:ring-green/40 dark:bg-green/60",
+        yellowclow:
+          "border-transparent bg-yellow-600 text-white [a&]:hover:bg-yellow/90 focus-visible:ring-yellow/20 dark:focus-visible:ring-yellow/40 dark:bg-yellow/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
       },
