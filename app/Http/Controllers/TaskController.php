@@ -8,10 +8,46 @@ use Inertia\Inertia;
 
 class TaskController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $tasks = Task::all();
-        return Inertia::render('Tasks/Index', compact('tasks'));
+        $tasksQuery = Task::query()
+            ->when($request->search, function ($q, $search) {
+                $q->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('category', 'like', "%{$search}%");
+                });
+            })
+            ->when(
+                $request->status,
+                fn($q, $status) =>
+                $q->where('status', $status)
+            )
+            ->when(
+                $request->priority,
+                fn($q, $priority) =>
+                $q->where('priority', $priority)
+            );
+
+        $tasks = $tasksQuery->latest()->get();
+
+        // 🔥 STATS
+        $stats = [
+            'total' => Task::count(),
+            'pending' => Task::where('status', 'pending')->count(),
+            'in_progress' => Task::where('status', 'in_progress')->count(),
+            'completed' => Task::where('status', 'completed')->count(),
+        ];
+
+        return Inertia::render('Tasks/Index', [
+            'tasks' => $tasks,
+            'stats' => $stats,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+                'priority' => $request->priority,
+            ],
+        ]);
     }
     public function store(Request $request)
     {

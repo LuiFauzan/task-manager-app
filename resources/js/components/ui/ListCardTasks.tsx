@@ -24,6 +24,7 @@ import {
     Calendar,
     CheckCheckIcon,
     Clock10Icon,
+    Loader2Icon,
     PenBoxIcon,
     Trash2,
 } from 'lucide-react';
@@ -78,11 +79,17 @@ export default function ListCardTasks({ tasks }: Props) {
                 <div className="flex w-full flex-col gap-2 rounded-lg border p-4 shadow-sm hover:shadow-md ">
                     <div className="flex flex-row justify-between p-2">
                         <div className="flex flex-row items-start gap-3">
-                            <div className="text-green-500  cursor-pointer"  onClick={() => handleBadgeStatus(task.id)}>
+                            <div className="  cursor-pointer"  onClick={() => handleBadgeStatus(task.id)}>
                                 {/* Icon */}
                                 {/* <LoaderCircleIcon/> */}
                                 {/* <Clock10Icon/> */}
-                                <CheckCheckIcon />
+                                {
+
+                                    task.status === 'completed' ? <span className='text-green-500 '><CheckCheckIcon /></span>
+                                    : task.status === 'in_progress' ? <span className='text-blue-500'><Clock10Icon /></span>
+                                    : <span className='text-orange-500'><Loader2Icon /></span>
+                                }
+
                             </div>
                             <div>
                                 <h3 className="text-2xl">{task.title}</h3>
@@ -151,7 +158,11 @@ export default function ListCardTasks({ tasks }: Props) {
                                         <AlertDialogDescription>
                                             This action cannot be undone. This
                                             will permanently delete your task
-                                            {task.title}
+                                            <p className='font-bold text-black'>
+                                                "
+                                                {" " + task.title + " " }
+                                                "
+                                            </p>
                                             and remove your data from our
                                             servers.
                                         </AlertDialogDescription>

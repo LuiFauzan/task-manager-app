@@ -30,17 +30,19 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { debounce } from 'lodash';
 import {
     CheckCheckIcon,
     Clock10Icon,
+    FolderX,
     ListTodoIcon,
     LoaderCircleIcon,
     Megaphone,
     Plus,
     Search,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Tasks',
@@ -58,26 +60,84 @@ interface Tasks {
 }
 
 interface IndexProps {
-    flash: {
+     tasks: Tasks[];
+    stats: {
+        total: number;
+        pending: number;
+        in_progress: number;
+        completed: number;
+    };
+    filters: {
+        search?: string;
+        status?: string;
+        priority?: string;
+    };
+    flash?: {
         message?: string;
     };
-    tasks: Tasks[];
 }
 export default function Index() {
-    const [openAdd, setOpenAdd] = useState(false)
-    const { flash, tasks } = usePage().props as IndexProps;
-    const { data, setData , post, processing, errors } = useForm({
+    const [openAdd, setOpenAdd] = useState(false);
+    const { flash, stats,tasks, filters } = usePage().props as IndexProps;
+    const  {search, setSearch}  = useState(filters?.search ?? '');
+    const [status, setStatus]  = useState(filters?.status ?? '');
+    const [ priority, setPriority] = useState(filters?.priority ?? '');
+    const [showFlash, setShowFlash] = useState(!!flash?.message);
+    useEffect(() => {
+    if (flash?.message) {
+        setShowFlash(true);
+
+        const timer = setTimeout(() => {
+            setShowFlash(false);
+        }, 3000); // ⏱️ 3 detik
+
+        return () => clearTimeout(timer);
+    }
+}, [flash?.message]);
+    const { data, setData, post, processing, errors } = useForm({
         title: '',
         category: '',
         description: '',
         priority: '',
     });
+
+    const applyFilters = (
+        newSearch= search,
+        newStatus= status,
+        newPriority= priority,
+    ) => {
+        router.get(
+            '/tasks',
+            {
+                search: newSearch || undefined,
+                status: newStatus || undefined,
+                priority: newPriority || undefined,
+            },
+            {
+                preserveState: true,
+                replace: true,
+            }
+        )
+    }
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post('/tasks', {
             onSuccess: () => setOpenAdd(false),
         });
     };
+    const handleSearch = debounce((value: string) => {
+        router.get(
+            '/tasks',
+            { search: value },
+            {
+                preserveState: true,
+                replace: true,
+            },
+        );
+        if (value === '') {
+            router.get('/tasks', {}, { replace: true });
+        }
+    }, 300);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tasks" />
@@ -88,11 +148,13 @@ export default function Index() {
                 </div>
                 <div className="absolute top-20 right-10 z-auto">
                     {/* Display Message Success */}
-                    {flash.message && (
-                        <Alert className="w-fit border-green-400 shadow-md text-green-600">
+                    {showFlash && flash?.message && (
+                        <Alert className="w-fit border-green-400 text-green-600 shadow-md">
                             <Megaphone />
                             <AlertTitle>Notifications</AlertTitle>
-                            <AlertDescription className='text-green-500'>{flash.message}</AlertDescription>
+                            <AlertDescription className="text-green-500">
+                                {flash.message}
+                            </AlertDescription>
                         </Alert>
                     )}
                 </div>
@@ -102,28 +164,28 @@ export default function Index() {
                     {/* list  */}
                     <StatsCard
                         title={'Total Tasks'}
-                        value="0"
+                        value={stats.total.toString()}
                         icon={<ListTodoIcon size={35} />}
                         bgColor="bg-purple-200"
                         iconColor="text-purple-600"
                     />
                     <StatsCard
                         title={'Pending Tasks'}
-                        value="0"
+                        value={stats.pending.toString()}
                         icon={<LoaderCircleIcon size={35} />}
                         bgColor="bg-orange-200"
                         iconColor="text-orange-600"
                     />
                     <StatsCard
                         title={'In Progress Tasks'}
-                        value="0"
+                        value={stats.in_progress.toString()}
                         icon={<Clock10Icon size={35} />}
                         bgColor="bg-blue-200"
                         iconColor="text-blue-600"
                     />
                     <StatsCard
                         title={'Completed Tasks'}
-                        value="0"
+                        value={stats.completed.toString()}
                         icon={<CheckCheckIcon size={35} />}
                         bgColor="bg-green-200"
                         iconColor="text-green-600"
@@ -133,18 +195,25 @@ export default function Index() {
                 <div className="mt-4 flex flex-row justify-between gap-2 rounded-lg border p-4">
                     {/* Input Group search */}
                     <InputGroup>
-                        <InputGroupInput placeholder="Search Tasks.." />
+                        <InputGroupInput
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            placeholder="Search Tasks.."
+                        />
                         <InputGroupAddon>
                             <Search />
                         </InputGroupAddon>
                     </InputGroup>
                     {/* Select */}
-                    <Select>
+                    <Select value={status} onValueChange={(value) => {
+                        setStatus(value)
+                        applyFilters(search,value,priority)
+                    }}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="All Status" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectGroup>
+                            <SelectGroup >
                                 <SelectLabel className="text-xs font-semibold text-gray-500">
                                     Status
                                 </SelectLabel>
@@ -158,7 +227,10 @@ export default function Index() {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <Select>
+                    <Select value={priority} onValueChange={(value) => {
+                        setPriority(value)
+                        applyFilters(search,status,value)
+                    }}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="All Priority" />
                         </SelectTrigger>
@@ -290,10 +362,21 @@ export default function Index() {
                 </div>
                 <div className="mt-4 flex h-fit flex-col items-center justify-center gap-3 rounded-lg border p-4">
                     {/* List cards tasks */}
-                    <ListCardTasks tasks={tasks} />
+                    {tasks.length > 0 ? (
+                        <ListCardTasks tasks={tasks} />
+                    ) : (
+                        <div className="mt-10 flex flex-col items-center justify-center rounded-lg border border-dashed p-10 text-center">
+                            <FolderX size={50} className='' strokeWidth={1.5}/>
+                            <h3 className="text-lg mt-5 font-semibold">
+                                No tasks found
+                            </h3>
+                            <p className="mt-2 text-sm text-gray-500">
+                                Try creating a new task or adjust your search.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </AppLayout>
     );
 }
-
